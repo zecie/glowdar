@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "glowmod",
+  "version": "1.0.0",
+  "name": "GlowMod",
+  "description": "Glows players and mobs in render distance, outlines whitelisted blocks, and provides a clean GUI with RGB color pickers.",
+  "authors": [
+    "chris"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/glowmod/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.glowmod.GlowModClient"
+    ]
+  },
+  "mixins": [
+    "glowmod.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "fabric-api": "*",
+    "minecraft": ">=1.21.11"
+  }
+}

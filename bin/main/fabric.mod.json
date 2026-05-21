@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "glowmod",
+  "version": "${version}",
+  "name": "GlowMod",
+  "description": "Auto-glows players in render distance and outlines whitelisted blocks with a searchable GUI.",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.glowmod.GlowModClient"
+    ]
+  },
+  "mixins": [
+    "glowmod.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "fabric-api": "*",
+    "minecraft": ">=1.21.11"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "key.glowmod.open_gui": "Open GlowMod Settings",
+  "key.categories.glowmod": "GlowMod",
+  "glowmod.screen.title": "GlowMod Settings",
+  "glowmod.screen.search": "Search blocks...",
+  "glowmod.screen.whitelist": "Block Whitelist",
+  "glowmod.screen.player_glow": "Player Glow: ",
+  "glowmod.screen.block_outline": "Block Outlines: ",
+  "glowmod.screen.on": "ON",
+  "glowmod.screen.off": "OFF",
+  "glowmod.screen.done": "Done",
+  "glowmod.screen.color": "Color (hex):",
+  "glowmod.screen.limit_warning": "Limit reached (5000 blocks max)"
+}
