@@ -24,26 +24,31 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class BlockOutlineRenderer {
 
-    private static final int CHUNKS_PER_TICK = 3;
+    private static int refreshTimer = 0;
 
     private static final Map<Long, Map<BlockPos, Integer>> blocksByChunk = new ConcurrentHashMap<>();
-    private static final Map<Long, LevelChunk> loadedChunks              = new ConcurrentHashMap<>();
-    private static final Queue<Long> scanQueue                           = new ConcurrentLinkedQueue<>();
+    private static final Map<Long, LevelChunk>             loadedChunks  = new ConcurrentHashMap<>();
 
-    private static final RenderPipeline LINES_NO_DEPTH_PIPELINE = RenderPipelines.register(
-            RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
-                    .withLocation(Identifier.fromNamespaceAndPath("glowmod", "pipeline/lines_no_depth"))
+    // Set instead of Queue: O(1) add with built-in deduplication — no contains() scan needed.
+    private static final Set<Long> scanQueue = ConcurrentHashMap.newKeySet();
+
+    // Pre-computed Block → color map rebuilt whenever the whitelist changes.
+    // Avoids registry reverse-lookups and string allocations inside the hot scan loop.
+    private static final Map<Block, Integer> blockColorLookup = new HashMap<>();
+
+    private static final RenderPipeline FILLED_NO_DEPTH_PIPELINE = RenderPipelines.register(
+            RenderPipeline.builder(RenderPipelines.DEBUG_FILLED_SNIPPET)
+                    .withLocation(Identifier.fromNamespaceAndPath("glowmod", "pipeline/filled_no_depth"))
                     .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
                     .build()
     );
 
-    private static final RenderType LINES_NO_DEPTH_LAYER = RenderType.create(
-            "glowmod_lines_no_depth",
-            RenderSetup.builder(LINES_NO_DEPTH_PIPELINE)
+    private static final RenderType FILLED_NO_DEPTH_LAYER = RenderType.create(
+            "glowmod_filled_no_depth",
+            RenderSetup.builder(FILLED_NO_DEPTH_PIPELINE)
                     .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
                     .setOutputTarget(OutputTarget.MAIN_TARGET)
                     .createRenderSetup()
@@ -53,7 +58,7 @@ public class BlockOutlineRenderer {
         ClientChunkEvents.CHUNK_LOAD.register((world, chunk) -> {
             long key = chunk.getPos().toLong();
             loadedChunks.put(key, chunk);
-            if (!GlowConfig.blockWhitelist.isEmpty()) scanQueue.offer(key);
+            if (!GlowConfig.blockWhitelist.isEmpty()) scanQueue.add(key);
         });
 
         ClientChunkEvents.CHUNK_UNLOAD.register((world, chunk) -> {
@@ -64,37 +69,56 @@ public class BlockOutlineRenderer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.level == null || GlowConfig.blockWhitelist.isEmpty()) return;
+
+            refreshTimer++;
+            if (refreshTimer >= GlowConfig.chunkRefreshInterval) {
+                refreshTimer = 0;
+                // addAll is O(n) with O(1) per key — no O(n) contains scan, no spike.
+                scanQueue.addAll(loadedChunks.keySet());
+            }
+
             int processed = 0;
-            while (processed < CHUNKS_PER_TICK) {
-                Long key = scanQueue.poll();
-                if (key == null) break;
+            Iterator<Long> it = scanQueue.iterator();
+            while (processed < GlowConfig.chunkScanRate && it.hasNext()) {
+                Long key = it.next();
+                it.remove();
                 LevelChunk chunk = loadedChunks.get(key);
                 if (chunk != null) scanChunk(chunk);
                 processed++;
             }
         });
 
+        rebuildBlockLookup();
+
         WorldRenderEvents.END_MAIN.register(context -> {
             if (!GlowConfig.blockOutlineEnabled || blocksByChunk.isEmpty()) return;
 
             Vec3 cam = context.gameRenderer().getMainCamera().position();
             PoseStack poseStack = context.matrices();
-            VertexConsumer buffer = context.consumers().getBuffer(LINES_NO_DEPTH_LAYER);
+            VertexConsumer buffer = context.consumers().getBuffer(FILLED_NO_DEPTH_LAYER);
 
             poseStack.pushPose();
             poseStack.translate(-cam.x, -cam.y, -cam.z);
 
+            double cullRadSq = 256.0 * 256.0;
+
             for (Map<BlockPos, Integer> posColors : blocksByChunk.values()) {
                 for (Map.Entry<BlockPos, Integer> entry : posColors.entrySet()) {
                     BlockPos pos = entry.getKey();
+                    double dx = pos.getX() + 0.5 - cam.x;
+                    double dy = pos.getY() + 0.5 - cam.y;
+                    double dz = pos.getZ() + 0.5 - cam.z;
+                    if (dx*dx + dy*dy + dz*dz > cullRadSq) continue;
+
                     int color = entry.getValue();
                     float r = ((color >> 16) & 0xFF) / 255f;
                     float g = ((color >> 8)  & 0xFF) / 255f;
                     float b = (color & 0xFF) / 255f;
-                    renderBox(poseStack, buffer,
+                    float a = GlowConfig.outlineOpacity;
+                    renderFilledBox(poseStack, buffer,
                             new AABB(pos.getX(), pos.getY(), pos.getZ(),
                                     pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1).inflate(0.0015),
-                            r, g, b);
+                            r, g, b, a);
                 }
             }
 
@@ -106,12 +130,24 @@ public class BlockOutlineRenderer {
     public static void rescanAll() {
         blocksByChunk.clear();
         scanQueue.clear();
+        rebuildBlockLookup();
         if (GlowConfig.blockWhitelist.isEmpty()) return;
         scanQueue.addAll(loadedChunks.keySet());
     }
 
+    private static void rebuildBlockLookup() {
+        blockColorLookup.clear();
+        for (Map.Entry<String, Integer> entry : GlowConfig.blockWhitelist.entrySet()) {
+            if (GlowConfig.disabledBlocks.contains(entry.getKey())) continue;
+            Identifier id = Identifier.tryParse(entry.getKey());
+            if (id == null) continue;
+            Block b = BuiltInRegistries.BLOCK.getValue(id);
+            if (b != null) blockColorLookup.put(b, entry.getValue());
+        }
+    }
+
     private static void scanChunk(LevelChunk chunk) {
-        if (GlowConfig.blockWhitelist.isEmpty()) {
+        if (blockColorLookup.isEmpty()) {
             blocksByChunk.remove(chunk.getPos().toLong());
             return;
         }
@@ -131,9 +167,7 @@ public class BlockOutlineRenderer {
                 for (int lx = 0; lx < 16; lx++) {
                     for (int lz = 0; lz < 16; lz++) {
                         Block block = section.getBlockState(lx, ly, lz).getBlock();
-                        Identifier key = BuiltInRegistries.BLOCK.getKey(block);
-                        if (key == null) continue;
-                        Integer color = GlowConfig.blockWhitelist.get(key.toString());
+                        Integer color = blockColorLookup.get(block);
                         if (color != null) {
                             found.put(new BlockPos(chunkMinX + lx, sectionMinY + ly, chunkMinZ + lz), color);
                         }
@@ -146,32 +180,39 @@ public class BlockOutlineRenderer {
         else blocksByChunk.remove(chunk.getPos().toLong());
     }
 
-    private static void renderBox(PoseStack poseStack, VertexConsumer buffer, AABB box, float r, float g, float b) {
-        double x1 = box.minX, y1 = box.minY, z1 = box.minZ;
-        double x2 = box.maxX, y2 = box.maxY, z2 = box.maxZ;
-        addLine(poseStack, buffer, x1, y1, z1, x2, y1, z1, r, g, b);
-        addLine(poseStack, buffer, x1, y1, z2, x2, y1, z2, r, g, b);
-        addLine(poseStack, buffer, x1, y1, z1, x1, y1, z2, r, g, b);
-        addLine(poseStack, buffer, x2, y1, z1, x2, y1, z2, r, g, b);
-        addLine(poseStack, buffer, x1, y2, z1, x2, y2, z1, r, g, b);
-        addLine(poseStack, buffer, x1, y2, z2, x2, y2, z2, r, g, b);
-        addLine(poseStack, buffer, x1, y2, z1, x1, y2, z2, r, g, b);
-        addLine(poseStack, buffer, x2, y2, z1, x2, y2, z2, r, g, b);
-        addLine(poseStack, buffer, x1, y1, z1, x1, y2, z1, r, g, b);
-        addLine(poseStack, buffer, x2, y1, z1, x2, y2, z1, r, g, b);
-        addLine(poseStack, buffer, x1, y1, z2, x1, y2, z2, r, g, b);
-        addLine(poseStack, buffer, x2, y1, z2, x2, y2, z2, r, g, b);
-    }
-
-    private static void addLine(PoseStack poseStack, VertexConsumer buffer,
-                                 double x1, double y1, double z1,
-                                 double x2, double y2, double z2,
-                                 float r, float g, float b) {
+    private static void renderFilledBox(PoseStack poseStack, VertexConsumer buffer, AABB box, float r, float g, float b, float a) {
         PoseStack.Pose pose = poseStack.last();
-        float dx = (float)(x2-x1), dy = (float)(y2-y1), dz = (float)(z2-z1);
-        float len = (float) Math.sqrt(dx*dx + dy*dy + dz*dz);
-        if (len < 1e-6f) return;
-        buffer.addVertex(pose, (float)x1, (float)y1, (float)z1).setColor(r,g,b,1f).setNormal(pose,dx/len,dy/len,dz/len).setLineWidth(2.5f);
-        buffer.addVertex(pose, (float)x2, (float)y2, (float)z2).setColor(r,g,b,1f).setNormal(pose,dx/len,dy/len,dz/len).setLineWidth(2.5f);
+        float x1 = (float)box.minX, y1 = (float)box.minY, z1 = (float)box.minZ;
+        float x2 = (float)box.maxX, y2 = (float)box.maxY, z2 = (float)box.maxZ;
+        // bottom
+        buffer.addVertex(pose, x1, y1, z1).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y1, z1).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y1, z2).setColor(r, g, b, a);
+        buffer.addVertex(pose, x1, y1, z2).setColor(r, g, b, a);
+        // top
+        buffer.addVertex(pose, x1, y2, z1).setColor(r, g, b, a);
+        buffer.addVertex(pose, x1, y2, z2).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y2, z2).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y2, z1).setColor(r, g, b, a);
+        // north (z=z1)
+        buffer.addVertex(pose, x1, y1, z1).setColor(r, g, b, a);
+        buffer.addVertex(pose, x1, y2, z1).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y2, z1).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y1, z1).setColor(r, g, b, a);
+        // south (z=z2)
+        buffer.addVertex(pose, x1, y1, z2).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y1, z2).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y2, z2).setColor(r, g, b, a);
+        buffer.addVertex(pose, x1, y2, z2).setColor(r, g, b, a);
+        // west (x=x1)
+        buffer.addVertex(pose, x1, y1, z1).setColor(r, g, b, a);
+        buffer.addVertex(pose, x1, y1, z2).setColor(r, g, b, a);
+        buffer.addVertex(pose, x1, y2, z2).setColor(r, g, b, a);
+        buffer.addVertex(pose, x1, y2, z1).setColor(r, g, b, a);
+        // east (x=x2)
+        buffer.addVertex(pose, x2, y1, z1).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y2, z1).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y2, z2).setColor(r, g, b, a);
+        buffer.addVertex(pose, x2, y1, z2).setColor(r, g, b, a);
     }
 }

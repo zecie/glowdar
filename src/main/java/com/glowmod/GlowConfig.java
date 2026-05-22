@@ -28,8 +28,21 @@ public class GlowConfig {
     public static boolean blockOutlineEnabled = true;
     public static int defaultOutlineColor = 0x00FF00;
 
+    public static float outlineLineWidth  = 2.5f;
+    public static float outlineOpacity    = 1.0f;
+    public static float glowRange         = 64.0f;
+    public static int   maxGlowEntities   = 16;
+    public static int   chunkScanRate        = 3;
+    public static int   chunkRefreshInterval = 200;
+
+    public static float guiOpacity     = 1.0f;
+    public static int   guiAccentColor = 0x6366F1; // stored as 0xRRGGBB
+
     public static final LinkedHashMap<String, Integer> blockWhitelist = new LinkedHashMap<>();
     public static final Set<String> mobGlowWhitelist = new LinkedHashSet<>();
+
+    public static final Set<String> disabledBlocks = new LinkedHashSet<>();
+    public static final Set<String> disabledMobs   = new LinkedHashSet<>();
 
     private static final Path CONFIG_FILE = FabricLoader.getInstance()
             .getConfigDir().resolve("glowmod.json");
@@ -46,6 +59,14 @@ public class GlowConfig {
             if (obj.has("mobGlowColor"))       mobGlowColor       = obj.get("mobGlowColor").getAsInt();
             if (obj.has("blockOutlineEnabled")) blockOutlineEnabled = obj.get("blockOutlineEnabled").getAsBoolean();
             if (obj.has("defaultOutlineColor")) defaultOutlineColor = obj.get("defaultOutlineColor").getAsInt();
+            if (obj.has("outlineLineWidth"))  outlineLineWidth  = obj.get("outlineLineWidth").getAsFloat();
+            if (obj.has("outlineOpacity"))    outlineOpacity    = obj.get("outlineOpacity").getAsFloat();
+            if (obj.has("glowRange"))         glowRange         = obj.get("glowRange").getAsFloat();
+            if (obj.has("maxGlowEntities"))   maxGlowEntities   = obj.get("maxGlowEntities").getAsInt();
+            if (obj.has("chunkScanRate"))        chunkScanRate        = obj.get("chunkScanRate").getAsInt();
+            if (obj.has("chunkRefreshInterval")) chunkRefreshInterval = obj.get("chunkRefreshInterval").getAsInt();
+            if (obj.has("guiOpacity"))        guiOpacity        = obj.get("guiOpacity").getAsFloat();
+            if (obj.has("guiAccentColor"))    guiAccentColor    = obj.get("guiAccentColor").getAsInt();
             if (obj.has("blockWhitelist")) {
                 blockWhitelist.clear();
                 for (JsonElement e : obj.getAsJsonArray("blockWhitelist")) {
@@ -64,6 +85,16 @@ public class GlowConfig {
                 for (JsonElement e : obj.getAsJsonArray("mobGlowWhitelist"))
                     mobGlowWhitelist.add(e.getAsString());
             }
+            if (obj.has("disabledBlocks")) {
+                disabledBlocks.clear();
+                for (JsonElement e : obj.getAsJsonArray("disabledBlocks"))
+                    disabledBlocks.add(e.getAsString());
+            }
+            if (obj.has("disabledMobs")) {
+                disabledMobs.clear();
+                for (JsonElement e : obj.getAsJsonArray("disabledMobs"))
+                    disabledMobs.add(e.getAsString());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -77,6 +108,14 @@ public class GlowConfig {
         obj.addProperty("mobGlowColor", mobGlowColor);
         obj.addProperty("blockOutlineEnabled", blockOutlineEnabled);
         obj.addProperty("defaultOutlineColor", defaultOutlineColor);
+        obj.addProperty("outlineLineWidth",  outlineLineWidth);
+        obj.addProperty("outlineOpacity",    outlineOpacity);
+        obj.addProperty("glowRange",         glowRange);
+        obj.addProperty("maxGlowEntities",   maxGlowEntities);
+        obj.addProperty("chunkScanRate",        chunkScanRate);
+        obj.addProperty("chunkRefreshInterval", chunkRefreshInterval);
+        obj.addProperty("guiOpacity",        guiOpacity);
+        obj.addProperty("guiAccentColor",    guiAccentColor);
         JsonArray arr = new JsonArray();
         for (Map.Entry<String, Integer> entry : blockWhitelist.entrySet()) {
             JsonObject e = new JsonObject();
@@ -88,6 +127,12 @@ public class GlowConfig {
         JsonArray mobArr = new JsonArray();
         for (String s : mobGlowWhitelist) mobArr.add(s);
         obj.add("mobGlowWhitelist", mobArr);
+        JsonArray disBlocks = new JsonArray();
+        for (String s : disabledBlocks) disBlocks.add(s);
+        obj.add("disabledBlocks", disBlocks);
+        JsonArray disMobs = new JsonArray();
+        for (String s : disabledMobs) disMobs.add(s);
+        obj.add("disabledMobs", disMobs);
         try (Writer writer = Files.newBufferedWriter(CONFIG_FILE)) {
             GSON.toJson(obj, writer);
         } catch (IOException e) {

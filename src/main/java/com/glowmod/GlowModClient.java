@@ -1,5 +1,6 @@
 package com.glowmod;
 
+import com.glowmod.EntityGlowManager;
 import com.glowmod.render.BlockOutlineRenderer;
 import com.glowmod.screen.BlockWhitelistScreen;
 import net.fabricmc.api.ClientModInitializer;
@@ -16,6 +17,7 @@ public class GlowModClient implements ClientModInitializer {
     public void onInitializeClient() {
         GlowConfig.load();
         BlockOutlineRenderer.init();
+        EntityGlowManager.init();
 
         openGuiKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.glowmod.open_gui",

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(where.exe java 2>$null; Get-ChildItem \"C:\\\\Program Files\\\\\" -Directory | Where-Object { $_.Name -match \"java|jdk|jre|eclipse|adoptium|temurin|graal\" -or $_.Name -match \"\\(?i\\)java\" } | Select-Object Name)",
+      "Bash(export JAVA_HOME=\"/c/graalvm-21/graalvm-community-openjdk-25.0.2+10.1\")",
+      "Bash(./gradlew compileJava)",
+      "Bash(export JAVA_HOME=\"/c/Users/chris/AppData/Roaming/PrismLauncher/java/java-runtime-delta\")",
+      "Bash(./gradlew build *)",
+      "Bash(cd /tmp)",
+      "Bash(jar tf *)",
+      "Bash(python3 *)",
+      "Bash(perl -ne 'while \\(/[\\\\x20-\\\\x7e]{4,}/g\\) { $match = $&; print \"$match\\\\n\" if $match =~ /\\(endOutline|setColor|getBuffer|doEntity|shouldShow|outline|render\\)/i }' /tmp/net/minecraft/client/renderer/OutlineBufferSource.class)",
+      "Read(//tmp/**)",
+      "Bash(/c/Users/chris/AppData/Roaming/PrismLauncher/java/java-runtime-delta/bin/javap -c net/minecraft/client/renderer/RenderPipelines.class)",
+      "Bash(/c/Users/chris/AppData/Roaming/PrismLauncher/java/java-runtime-delta/bin/javap -p net/minecraft/client/renderer/RenderPipelines.class)",
+      "WebFetch(domain:github.com)",
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $bmp = [System.Drawing.Bitmap]::FromFile\\(\"C:\\\\Users\\\\chris\\\\Downloads\\\\268.webp\"\\); $bmp.Save\\(\"C:\\\\users\\\\chris\\\\glow\\\\src\\\\main\\\\resources\\\\assets\\\\glowmod\\\\icon.png\", [System.Drawing.Imaging.ImageFormat]::Png\\); $bmp.Dispose\\(\\); Write-Host \"Done - size: $\\($bmp.Width\\)x$\\($bmp.Height\\)\")"
+    ]
+  }
+}

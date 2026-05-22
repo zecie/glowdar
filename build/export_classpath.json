@@ -2,13 +2,13 @@
   "projectPath": ":",
   "classpaths": {
     "test": [
-      "/Users/chris/Documents/glow/build/classes/java/test",
-      "/Users/chris/Documents/glow/build/resources/test"
+      "C:\\Users\\chris\\glow\\build\\classes\\java\\test",
+      "C:\\Users\\chris\\glow\\build\\resources\\test"
     ],
     "main": [
-      "/Users/chris/Documents/glow/build/classes/java/main",
-      "/Users/chris/Documents/glow/build/resources/main",
-      "/Users/chris/Documents/glow/build/devlibs/glowmod-1.0.0-dev.jar"
+      "C:\\Users\\chris\\glow\\build\\classes\\java\\main",
+      "C:\\Users\\chris\\glow\\build\\resources\\main",
+      "C:\\Users\\chris\\glow\\build\\devlibs\\glowmod-1.0.0-dev.jar"
     ]
   }
 }

@@ -3,7 +3,7 @@
   "id": "glowmod",
   "version": "${version}",
   "name": "GlowMod",
-  "description": "Glows players and mobs in render distance, outlines whitelisted blocks, and provides a clean GUI with RGB color pickers.",
+  "description": "A client side mod designed to locate blocks in your render distance with configurable performance optimizations and a sleek GUI",
   "authors": [
     "chris"
   ],
