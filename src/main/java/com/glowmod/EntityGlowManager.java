@@ -12,23 +12,28 @@ import java.util.*;
 
 public class EntityGlowManager {
 
-    // Written on the tick thread, read on the render thread.
-    // Volatile + immutable-after-publish makes this safe without locking.
-    private static volatile Set<Integer> glowSet = Collections.emptySet();
+    private static volatile int[] glowIds = new int[0];
+
+    private static int           tickCounter  = 0;
+    private static final int     UPDATE_EVERY = 3;
 
     private record Candidate(int id, double distSq) {}
 
     public static void init() {
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             if (mc.level == null || mc.player == null) {
-                glowSet = Collections.emptySet();
+                glowIds = new int[0];
+                tickCounter = 0;
                 return;
             }
+
+            if (++tickCounter < UPDATE_EVERY) return;
+            tickCounter = 0;
 
             boolean wantPlayers = GlowConfig.playerGlowEnabled;
             boolean wantMobs    = GlowConfig.mobGlowEnabled && !GlowConfig.mobGlowWhitelist.isEmpty();
             if (!wantPlayers && !wantMobs) {
-                glowSet = Collections.emptySet();
+                glowIds = new int[0];
                 return;
             }
 
@@ -61,19 +66,19 @@ public class EntityGlowManager {
                 }
             }
 
-            // Sort by distance so the closest entities always win when at the cap.
             candidates.sort(Comparator.comparingDouble(Candidate::distSq));
 
-            int cap = GlowConfig.maxGlowEntities;
-            Set<Integer> next = new HashSet<>(Math.min(candidates.size(), cap) * 2 + 1);
-            for (int i = 0; i < candidates.size() && i < cap; i++) {
-                next.add(candidates.get(i).id());
-            }
-            glowSet = next;
+            int cap  = GlowConfig.maxGlowEntities;
+            int size = Math.min(candidates.size(), cap);
+            int[] next = new int[size];
+            for (int i = 0; i < size; i++) next[i] = candidates.get(i).id();
+            Arrays.sort(next);
+            glowIds = next;
         });
     }
 
     public static boolean shouldGlow(int entityId) {
-        return glowSet.contains(entityId);
+        int[] ids = glowIds;
+        return ids.length > 0 && Arrays.binarySearch(ids, entityId) >= 0;
     }
 }

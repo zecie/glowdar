@@ -24,7 +24,6 @@ import java.util.stream.StreamSupport;
 
 public class BlockWhitelistScreen extends Screen {
 
-    // ── Fixed layout constants ─────────────────────────────────────────────────
     private static final int MAX_PW    = 640;
     private static final int MAX_PH    = 420;
     private static final int HEADER_H  = 42;
@@ -38,7 +37,6 @@ public class BlockWhitelistScreen extends Screen {
     private static final int PILL_H    = 18;
     private static final int SEC_GAP   = 12;
 
-    // ── Base colors (never change) ─────────────────────────────────────────────
     private static final int C_DIM     = 0xBB000008;
     private static final int C_BG      = 0xFF0B0D17;
     private static final int C_HEADER  = 0xFF0D0F1C;
@@ -52,7 +50,6 @@ public class BlockWhitelistScreen extends Screen {
     private static final int C_RED     = 0xFFEF4444;
     private static final int C_HOV     = 0x0AFFFFFF;
 
-    // ── Theme presets (0xRRGGBB) ──────────────────────────────────────────────
     private static final int[]    THEMES = {
         0x6366F1, 0x06B6D4, 0xA855F7, 0xEC4899,
         0x14B8A6, 0xF59E0B, 0x22C55E, 0xEF4444
@@ -62,7 +59,6 @@ public class BlockWhitelistScreen extends Screen {
         "Teal",   "Amber","Green",  "Red"
     };
 
-    // ── Dynamic accent helpers ─────────────────────────────────────────────────
     private int cA()   { return 0xFF000000 | GlowConfig.guiAccentColor; }
     private int cAL()  {
         int c = GlowConfig.guiAccentColor;
@@ -73,20 +69,17 @@ public class BlockWhitelistScreen extends Screen {
     }
     private int cABG() { return (0x1A << 24) | (GlowConfig.guiAccentColor & 0xFFFFFF); }
 
-    // Multiply a color's alpha by guiOpacity so panels become see-through.
     private int tinted(int argb) {
         int a = Math.round(((argb >> 24) & 0xFF) * GlowConfig.guiOpacity);
         return (a << 24) | (argb & 0x00FFFFFF);
     }
 
-    // ── Color picker ──────────────────────────────────────────────────────────
     private static final int PK_SIZE  = 120;
     private static final int PK_HUE_H = 12;
     private static final int PK_PAD   = 12;
     private static final int PK_W     = PK_SIZE + PK_PAD * 2;
     private static final int PK_H     = PK_PAD + PK_SIZE + PK_PAD + PK_HUE_H + PK_PAD + 14 + PK_PAD;
 
-    // ── Pages ─────────────────────────────────────────────────────────────────
     private enum Page { GLOW, OUTLINES, PERF, SETTINGS }
     private record NavItem(Page page, String icon, String label) {}
     private static final NavItem[] NAV = {
@@ -97,7 +90,6 @@ public class BlockWhitelistScreen extends Screen {
     };
     private Page activePage = Page.GLOW;
 
-    // ── Whitelist / search ────────────────────────────────────────────────────
     private EditBox searchBox;
     private List<Block>         blockResults   = new ArrayList<>();
     private List<EntityType<?>> mobResults     = new ArrayList<>();
@@ -107,19 +99,15 @@ public class BlockWhitelistScreen extends Screen {
     private int selectedResult = 0;
     private int listScroll     = 0;
 
-    // ── Toggle animations ─────────────────────────────────────────────────────
     private float animPlayer  = 0f;
     private float animMob     = 0f;
     private float animOutline = 0f;
 
-    // ── Toggle hit areas (set during render) ──────────────────────────────────
     private int playerToggleY = -1, mobToggleY = -1, outlineToggleY = -1;
     private int playerSwatchX, playerSwatchY, mobSwatchX, mobSwatchY;
 
-    // ── Keybind ───────────────────────────────────────────────────────────────
     private boolean capturingKey = false;
 
-    // ── Sliders ───────────────────────────────────────────────────────────────
     private record SliderDef(String id, int x, int trackY, int w, float min, float max) {
         float valueAt(int mx) {
             return min + Math.max(0f, Math.min(1f, (float)(mx - x) / w)) * (max - min);
@@ -128,17 +116,14 @@ public class BlockWhitelistScreen extends Screen {
     private final List<SliderDef> frameSliders = new ArrayList<>();
     private String activeSlider = null;
 
-    // ── Theme swatches (set during render) ────────────────────────────────────
     private record SwatchDef(int color, int x, int y, int w, int h) {}
     private final List<SwatchDef> frameSwatches = new ArrayList<>();
 
-    // ── Color picker ──────────────────────────────────────────────────────────
     private String  pickerTarget = null;
     private float   pickerH, pickerS = 1f, pickerV = 1f;
     private int     pkX, pkY;
     private boolean dragSV, dragHue;
 
-    // ── Computed layout (recalculated in init) ────────────────────────────────
     private int pw, ph;
     private int px, py;
     private int sideX, sideY, sideH;
@@ -151,19 +136,13 @@ public class BlockWhitelistScreen extends Screen {
         this.parent = parent;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Init
-    // ─────────────────────────────────────────────────────────────────────────
-
     @Override
     protected void init() {
-        // Fit within screen with 20px margin on each side, capped at MAX_PW/PH.
         pw = Math.max(380, Math.min(MAX_PW, width  - 40));
         ph = Math.max(280, Math.min(MAX_PH, height - 40));
         px = (width  - pw) / 2;
         py = (height - ph) / 2;
 
-        // Three separate panels: header bar, sidebar, content.
         int bodyY = py + HEADER_H + PANEL_GAP;
         int bodyH = ph - HEADER_H - PANEL_GAP;
 
@@ -195,10 +174,6 @@ public class BlockWhitelistScreen extends Screen {
         setInitialFocus(searchBox);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Render
-    // ─────────────────────────────────────────────────────────────────────────
-
     @Override
     public void renderBackground(GuiGraphics g, int mx, int my, float delta) {
         g.fill(0, 0, width, height, C_DIM);
@@ -214,12 +189,10 @@ public class BlockWhitelistScreen extends Screen {
         frameSwatches.clear();
         super.render(g, mx, my, delta);
 
-        // Shadows (draw all before panels so they don't overlap panel fill)
         GuiRenderer.shadow(g, px,    py,    pw,      HEADER_H, RADIUS, 8);
         GuiRenderer.shadow(g, sideX, sideY, SIDEBAR_W, sideH,  RADIUS, 8);
         GuiRenderer.shadow(g, contX, contY, contW,   contH,    RADIUS, 8);
 
-        // Panels
         GuiRenderer.roundedRect(g, px,    py,    pw,        HEADER_H, RADIUS, tinted(C_HEADER));
         GuiRenderer.roundedRect(g, sideX, sideY, SIDEBAR_W, sideH,    RADIUS, tinted(C_SIDEBAR));
         GuiRenderer.roundedRect(g, contX, contY, contW,     contH,    RADIUS, tinted(C_BG));
@@ -231,17 +204,12 @@ public class BlockWhitelistScreen extends Screen {
         if (pickerTarget != null) renderPicker(g, mx, my);
     }
 
-    // ── Header ────────────────────────────────────────────────────────────────
-
     private void drawHeader(GuiGraphics g, int mx, int my) {
-        // Thin gradient accent line at top of header panel
         g.fillGradient(px + RADIUS, py, px + pw / 2, py + 2, cA(), cAL());
         g.fillGradient(px + pw / 2, py, px + pw - RADIUS, py + 2, cAL(), cA() & 0x00FFFFFF);
 
-        // Bottom separator
         g.fill(px + RADIUS, py + HEADER_H - 1, px + pw - RADIUS, py + HEADER_H, C_BORDER);
 
-        // Title + badge
         g.drawString(font, "GlowMod", px + PAD, py + (HEADER_H - 8) / 2, C_TEXT, false);
         String badge = "v1.0";
         int bx = px + PAD + font.width("GlowMod") + 8;
@@ -249,7 +217,6 @@ public class BlockWhitelistScreen extends Screen {
         GuiRenderer.roundedRect(g, bx, by, font.width(badge) + 10, 12, 4, tinted(C_SURFACE));
         g.drawString(font, badge, bx + 5, by + 2, C_MUTED, false);
 
-        // Active page label (right-aligned)
         String lbl = switch (activePage) {
             case GLOW     -> "★  Glow";
             case OUTLINES -> "▣  Outlines";
@@ -258,8 +225,6 @@ public class BlockWhitelistScreen extends Screen {
         };
         g.drawString(font, lbl, px + pw - PAD - font.width(lbl), py + (HEADER_H - 8) / 2, C_MUTED, false);
     }
-
-    // ── Sidebar ───────────────────────────────────────────────────────────────
 
     private static final int NAV_H   = 38;
     private static final int NAV_GAP = 3;
@@ -284,14 +249,11 @@ public class BlockWhitelistScreen extends Screen {
             ny += NAV_H + NAV_GAP;
         }
 
-        // Thin separator below nav items
         int sepY = sideY + 8 + NAV.length * (NAV_H + NAV_GAP) + 4;
         g.fill(sideX + PAD, sepY, sideX + SIDEBAR_W - PAD, sepY + 1, C_BORDER);
     }
 
     private int navTopY(int i) { return sideY + 8 + i * (NAV_H + NAV_GAP); }
-
-    // ── Content dispatch ──────────────────────────────────────────────────────
 
     private void drawContent(GuiGraphics g, int mx, int my, float delta) {
         switch (activePage) {
@@ -301,8 +263,6 @@ public class BlockWhitelistScreen extends Screen {
             case SETTINGS -> drawSettingsPage(g, mx, my);
         }
     }
-
-    // ── Glow page ─────────────────────────────────────────────────────────────
 
     private void drawGlowPage(GuiGraphics g, int mx, int my, float delta) {
         int x = contX + PAD, w = contW - PAD * 2, y = contY + PAD;
@@ -328,8 +288,6 @@ public class BlockWhitelistScreen extends Screen {
         drawWhitelistArea(g, mx, my, delta, x, y, w, contY + contH - 4, true);
     }
 
-    // ── Outlines page ─────────────────────────────────────────────────────────
-
     private void drawOutlinesPage(GuiGraphics g, int mx, int my, float delta) {
         int x = contX + PAD, w = contW - PAD * 2, y = contY + PAD;
 
@@ -346,8 +304,6 @@ public class BlockWhitelistScreen extends Screen {
         sectionLabel(g, x, y, "BLOCK WHITELIST"); y += 14;
         drawWhitelistArea(g, mx, my, delta, x, y, w, contY + contH - 4, false);
     }
-
-    // ── Performance page ──────────────────────────────────────────────────────
 
     private void drawPerfPage(GuiGraphics g, int mx, int my) {
         int x = contX + PAD, w = contW - PAD * 2, y = contY + PAD;
@@ -369,8 +325,6 @@ public class BlockWhitelistScreen extends Screen {
         g.drawString(font, "Lower values reduce CPU usage with many entities or blocks.", x, y, C_MUTED, false);
     }
 
-    // ── Settings page ─────────────────────────────────────────────────────────
-
     private void drawSettingsPage(GuiGraphics g, int mx, int my) {
         int x = contX + PAD, w = contW - PAD * 2, y = contY + PAD;
 
@@ -381,7 +335,6 @@ public class BlockWhitelistScreen extends Screen {
         divider(g, x, y, w); y += SEC_GAP;
         sectionLabel(g, x, y, "ACCENT COLOR"); y += 14;
 
-        // Theme swatches — 4 per row
         int swW = (w - 3 * 6) / 4;
         int swH = 26;
         for (int i = 0; i < THEMES.length; i++) {
@@ -394,7 +347,7 @@ public class BlockWhitelistScreen extends Screen {
             int fill = 0xFF000000 | THEMES[i];
             GuiRenderer.roundedRect(g, sx, sy, swW, swH, 5, fill);
             if (selected) {
-                g.fill(sx - 2, sy - 2, sx + swW + 2, sy + swH + 2, 0x00000000); // transparent frame
+                g.fill(sx - 2, sy - 2, sx + swW + 2, sy + swH + 2, 0x00000000);
                 g.fill(sx - 2, sy - 2, sx + swW + 2, sy - 1,       0xFFFFFFFF);
                 g.fill(sx - 2, sy + swH + 1, sx + swW + 2, sy + swH + 2, 0xFFFFFFFF);
                 g.fill(sx - 2, sy - 2, sx - 1,             sy + swH + 2, 0xFFFFFFFF);
@@ -402,7 +355,6 @@ public class BlockWhitelistScreen extends Screen {
             } else if (hov) {
                 g.fill(sx, sy, sx + swW, sy + swH, 0x44FFFFFF);
             }
-            // Name label inside swatch
             int nameColor = selected ? 0xFFFFFFFF : 0xCCFFFFFF;
             int nameX = sx + (swW - font.width(THEME_NAMES[i])) / 2;
             g.drawString(font, THEME_NAMES[i], nameX, sy + (swH - 8) / 2, nameColor, false);
@@ -430,8 +382,6 @@ public class BlockWhitelistScreen extends Screen {
         y += btnH + 8;
         g.drawString(font, "Click then press a key to rebind.", x, y, C_MUTED, false);
     }
-
-    // ── Shared UI helpers ─────────────────────────────────────────────────────
 
     private void sectionLabel(GuiGraphics g, int x, int y, String text) {
         g.drawString(font, text, x, y, C_MUTED, false);
@@ -490,8 +440,6 @@ public class BlockWhitelistScreen extends Screen {
         frameSliders.add(new SliderDef(id, x, ty, w, min, max));
     }
 
-    // ── Whitelist area ────────────────────────────────────────────────────────
-
     private void drawWhitelistArea(GuiGraphics g, int mx, int my, float delta,
                                     int x, int y, int w, int maxY, boolean mobs) {
         int sbH = 20;
@@ -507,7 +455,6 @@ public class BlockWhitelistScreen extends Screen {
         int col2X = x + halfW + 4;
         g.fill(x + halfW + 1, y, x + halfW + 2, maxY, C_BORDER);
 
-        // Left: results
         List<?> results = mobs ? mobResults : blockResults;
         int ly = y;
         for (int i = 0; i < results.size() && ly + ROW_H <= maxY; i++, ly += ROW_H) {
@@ -529,7 +476,6 @@ public class BlockWhitelistScreen extends Screen {
         if (results.isEmpty() && !searchBox.getValue().isEmpty())
             g.drawString(font, "no results", x + 8, y + 4, C_DIM_TXT, false);
 
-        // Right: whitelist
         List<String> wl = whitelistCache;
         int vis = Math.max(1, (maxY - y) / ROW_H);
         listScroll = Math.min(listScroll, Math.max(0, wl.size() - vis));
@@ -545,7 +491,6 @@ public class BlockWhitelistScreen extends Screen {
                 boolean hov    = mx >= col2X && mx < col2X + halfW && my >= wy && my < wy + ROW_H;
                 if (hov) g.fill(col2X, wy, col2X + halfW, wy + ROW_H - 1, C_HOV);
 
-                // Toggle dot (8×8)
                 int dotSz = 8;
                 int dotX  = col2X + 4;
                 int dotY  = wy + (ROW_H - dotSz) / 2;
@@ -555,7 +500,6 @@ public class BlockWhitelistScreen extends Screen {
                 int rmX  = col2X + halfW - 12;
                 boolean rmH = mx >= rmX - 3 && mx < rmX + 10 && my >= wy && my < wy + ROW_H;
 
-                // Color swatch (blocks only), shifted right of toggle
                 int textX = dotX + dotSz + 4;
                 if (!mobs) {
                     int c  = colorCache.getOrDefault(id, 0x00FF00) | 0xFF000000;
@@ -575,8 +519,6 @@ public class BlockWhitelistScreen extends Screen {
             }
         }
     }
-
-    // ── Color picker ──────────────────────────────────────────────────────────
 
     private void renderPicker(GuiGraphics g, int mx, int my) {
         GuiRenderer.shadow(g, pkX, pkY, PK_W, PK_H, 6, 5);
@@ -615,10 +557,6 @@ public class BlockWhitelistScreen extends Screen {
         g.drawString(font, String.format("#%06X", cur & 0xFFFFFF), svX + 20, pY + 2, C_MUTED, false);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Input
-    // ─────────────────────────────────────────────────────────────────────────
-
     @Override
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean captured) {
         if (captured || event.button() != 0) return super.mouseClicked(event, captured);
@@ -626,7 +564,6 @@ public class BlockWhitelistScreen extends Screen {
 
         if (capturingKey) { capturingKey = false; return true; }
 
-        // Color picker
         if (pickerTarget != null) {
             int svX = pkX + PK_PAD, svY = pkY + PK_PAD, hueY = svY + PK_SIZE + PK_PAD;
             if (mx >= svX && mx <= svX + PK_SIZE && my >= svY && my <= svY + PK_SIZE) {
@@ -644,7 +581,6 @@ public class BlockWhitelistScreen extends Screen {
             return true;
         }
 
-        // Sliders
         for (SliderDef s : frameSliders) {
             if (my >= s.trackY() - 10 && my <= s.trackY() + 14 &&
                 mx >= s.x() - 6 && mx <= s.x() + s.w() + 6) {
@@ -652,14 +588,12 @@ public class BlockWhitelistScreen extends Screen {
             }
         }
 
-        // Theme swatches
         for (SwatchDef sw : frameSwatches) {
             if (mx >= sw.x() && mx < sw.x() + sw.w() && my >= sw.y() && my < sw.y() + sw.h()) {
                 GlowConfig.guiAccentColor = sw.color(); GlowConfig.save(); return true;
             }
         }
 
-        // Sidebar nav
         for (int i = 0; i < NAV.length; i++) {
             int iy = navTopY(i);
             if (mx >= sideX && mx < sideX + SIDEBAR_W && my >= iy && my < iy + NAV_H) {
@@ -667,7 +601,6 @@ public class BlockWhitelistScreen extends Screen {
             }
         }
 
-        // Feature toggle rows
         if (activePage == Page.GLOW) {
             int pillX = contX + PAD + (contW - PAD * 2) - PILL_W;
             if (playerToggleY >= 0 && my >= playerToggleY && my < playerToggleY + 26) {
@@ -692,19 +625,15 @@ public class BlockWhitelistScreen extends Screen {
             }
         }
 
-        // Whitelist
         handleWhitelistClick(mx, my);
 
-        // Keybind button (settings page)
         if (activePage == Page.SETTINGS) {
-            // Approximate keybind button position — just capture if click is roughly where it would be
             int kbY = contY + PAD + 38 + SEC_GAP + 14 + ((THEMES.length + 3) / 4) * (26 + 6) + 4 + SEC_GAP + 14;
             if (my >= kbY && my < kbY + 24 && mx >= contX + PAD && mx < contX + PAD + 200) {
                 capturingKey = true; return true;
             }
         }
 
-        // Close on outside click
         if (mx < px || mx > px + pw || my < py || my > py + ph) { onClose(); return true; }
         return super.mouseClicked(event, captured);
     }
@@ -736,7 +665,6 @@ public class BlockWhitelistScreen extends Screen {
                 int rmX = col2X + halfW - 12;
                 if (mx >= rmX - 3) { removeEntry(id); return; }
 
-                // Toggle dot (8×8 at col2X+4, matches render)
                 int dotSz = 8, dotX = col2X + 4, dotY = wy + (ROW_H - dotSz) / 2;
                 if (mx >= dotX - 1 && mx < dotX + dotSz + 1 && my >= dotY - 1 && my < dotY + dotSz + 1) {
                     java.util.Set<String> disabled = mobs ? GlowConfig.disabledMobs : GlowConfig.disabledBlocks;
@@ -747,7 +675,6 @@ public class BlockWhitelistScreen extends Screen {
                 }
 
                 if (!mobs) {
-                    // swatch is now at col2X+16 (past toggle dot), matching render
                     int sx = col2X + 16, sy = wy + (ROW_H - SWATCH) / 2;
                     if (mx >= sx - 2 && mx < sx + SWATCH + 2 && my >= sy - 2 && my < sy + SWATCH + 2) {
                         openPicker(id, colorCache.getOrDefault(id, GlowConfig.defaultOutlineColor), mx, my + 10);
@@ -801,7 +728,6 @@ public class BlockWhitelistScreen extends Screen {
             assert minecraft != null; minecraft.options.save();
             capturingKey = false; return true;
         }
-        // Same key that opens the GUI closes it while it's open.
         com.mojang.blaze3d.platform.InputConstants.Key bound =
                 KeyBindingHelper.getBoundKeyOf(GlowModClient.openGuiKey);
         if (bound.getType() == com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM
@@ -818,10 +744,6 @@ public class BlockWhitelistScreen extends Screen {
 
     @Override
     public void onClose() { assert minecraft != null; minecraft.setScreen(parent); }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Logic helpers
-    // ─────────────────────────────────────────────────────────────────────────
 
     private void switchPage(Page p) {
         if (activePage == p) return;
@@ -896,7 +818,7 @@ public class BlockWhitelistScreen extends Screen {
         } else if (activePage == Page.OUTLINES) {
             if (!blockResults.isEmpty()) { addBlock(blockResults.get(Math.min(selectedResult, blockResults.size()-1))); return; }
             String t = searchBox.getValue().trim(); Identifier id = Identifier.tryParse(t);
-            if (id != null) { Block b = BuiltInRegistries.BLOCK.getValue(id); if (b != null) addBlock(b); }
+            if (id != null) { Block b = BuiltInRegistries.BLOCK.getValue(id); if (id.equals(BuiltInRegistries.BLOCK.getKey(b))) addBlock(b); }
         }
     }
 
@@ -915,13 +837,9 @@ public class BlockWhitelistScreen extends Screen {
             for (String id : whitelistCache) { Identifier p = Identifier.tryParse(id); EntityType<?> et = p != null ? BuiltInRegistries.ENTITY_TYPE.getValue(p) : null; nameCache.put(id, et != null ? et.getDescription().getString() : id); }
         } else {
             whitelistCache = new ArrayList<>(GlowConfig.blockWhitelist.keySet());
-            for (String id : whitelistCache) { Identifier p = Identifier.tryParse(id); Block b = p != null ? BuiltInRegistries.BLOCK.getValue(p) : null; nameCache.put(id, b != null ? b.getName().getString() : id); colorCache.put(id, GlowConfig.blockWhitelist.getOrDefault(id, GlowConfig.defaultOutlineColor)); }
+            for (String id : whitelistCache) { Identifier p = Identifier.tryParse(id); Block b = p != null ? BuiltInRegistries.BLOCK.getValue(p) : null; if (b != null && !p.equals(BuiltInRegistries.BLOCK.getKey(b))) b = null; nameCache.put(id, b != null ? b.getName().getString() : id); colorCache.put(id, GlowConfig.blockWhitelist.getOrDefault(id, GlowConfig.defaultOutlineColor)); }
         }
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Math helpers
-    // ─────────────────────────────────────────────────────────────────────────
 
     private static float clamp01(float v) { return Math.max(0f, Math.min(1f, v)); }
 

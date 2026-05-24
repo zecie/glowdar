@@ -32,11 +32,8 @@ public class BlockOutlineRenderer {
     private static final Map<Long, Map<BlockPos, Integer>> blocksByChunk = new ConcurrentHashMap<>();
     private static final Map<Long, LevelChunk>             loadedChunks  = new ConcurrentHashMap<>();
 
-    // Set instead of Queue: O(1) add with built-in deduplication — no contains() scan needed.
     private static final Set<Long> scanQueue = ConcurrentHashMap.newKeySet();
 
-    // Pre-computed Block → color map rebuilt whenever the whitelist changes.
-    // Avoids registry reverse-lookups and string allocations inside the hot scan loop.
     private static final Map<Block, Integer> blockColorLookup = new HashMap<>();
 
     private static final RenderPipeline FILLED_NO_DEPTH_PIPELINE = RenderPipelines.register(
@@ -73,7 +70,6 @@ public class BlockOutlineRenderer {
             refreshTimer++;
             if (refreshTimer >= GlowConfig.chunkRefreshInterval) {
                 refreshTimer = 0;
-                // addAll is O(n) with O(1) per key — no O(n) contains scan, no spike.
                 scanQueue.addAll(loadedChunks.keySet());
             }
 
@@ -132,7 +128,9 @@ public class BlockOutlineRenderer {
         scanQueue.clear();
         rebuildBlockLookup();
         if (GlowConfig.blockWhitelist.isEmpty()) return;
-        scanQueue.addAll(loadedChunks.keySet());
+        for (LevelChunk chunk : loadedChunks.values()) {
+            scanChunk(chunk);
+        }
     }
 
     private static void rebuildBlockLookup() {
@@ -142,7 +140,8 @@ public class BlockOutlineRenderer {
             Identifier id = Identifier.tryParse(entry.getKey());
             if (id == null) continue;
             Block b = BuiltInRegistries.BLOCK.getValue(id);
-            if (b != null) blockColorLookup.put(b, entry.getValue());
+            if (!id.equals(BuiltInRegistries.BLOCK.getKey(b))) continue;
+            blockColorLookup.put(b, entry.getValue());
         }
     }
 
@@ -184,32 +183,26 @@ public class BlockOutlineRenderer {
         PoseStack.Pose pose = poseStack.last();
         float x1 = (float)box.minX, y1 = (float)box.minY, z1 = (float)box.minZ;
         float x2 = (float)box.maxX, y2 = (float)box.maxY, z2 = (float)box.maxZ;
-        // bottom
         buffer.addVertex(pose, x1, y1, z1).setColor(r, g, b, a);
         buffer.addVertex(pose, x2, y1, z1).setColor(r, g, b, a);
         buffer.addVertex(pose, x2, y1, z2).setColor(r, g, b, a);
         buffer.addVertex(pose, x1, y1, z2).setColor(r, g, b, a);
-        // top
         buffer.addVertex(pose, x1, y2, z1).setColor(r, g, b, a);
         buffer.addVertex(pose, x1, y2, z2).setColor(r, g, b, a);
         buffer.addVertex(pose, x2, y2, z2).setColor(r, g, b, a);
         buffer.addVertex(pose, x2, y2, z1).setColor(r, g, b, a);
-        // north (z=z1)
         buffer.addVertex(pose, x1, y1, z1).setColor(r, g, b, a);
         buffer.addVertex(pose, x1, y2, z1).setColor(r, g, b, a);
         buffer.addVertex(pose, x2, y2, z1).setColor(r, g, b, a);
         buffer.addVertex(pose, x2, y1, z1).setColor(r, g, b, a);
-        // south (z=z2)
         buffer.addVertex(pose, x1, y1, z2).setColor(r, g, b, a);
         buffer.addVertex(pose, x2, y1, z2).setColor(r, g, b, a);
         buffer.addVertex(pose, x2, y2, z2).setColor(r, g, b, a);
         buffer.addVertex(pose, x1, y2, z2).setColor(r, g, b, a);
-        // west (x=x1)
         buffer.addVertex(pose, x1, y1, z1).setColor(r, g, b, a);
         buffer.addVertex(pose, x1, y1, z2).setColor(r, g, b, a);
         buffer.addVertex(pose, x1, y2, z2).setColor(r, g, b, a);
         buffer.addVertex(pose, x1, y2, z1).setColor(r, g, b, a);
-        // east (x=x2)
         buffer.addVertex(pose, x2, y1, z1).setColor(r, g, b, a);
         buffer.addVertex(pose, x2, y2, z1).setColor(r, g, b, a);
         buffer.addVertex(pose, x2, y2, z2).setColor(r, g, b, a);

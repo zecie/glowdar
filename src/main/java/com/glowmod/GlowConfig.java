@@ -36,7 +36,7 @@ public class GlowConfig {
     public static int   chunkRefreshInterval = 200;
 
     public static float guiOpacity     = 1.0f;
-    public static int   guiAccentColor = 0x6366F1; // stored as 0xRRGGBB
+    public static int   guiAccentColor = 0x6366F1;
 
     public static final LinkedHashMap<String, Integer> blockWhitelist = new LinkedHashMap<>();
     public static final Set<String> mobGlowWhitelist = new LinkedHashSet<>();

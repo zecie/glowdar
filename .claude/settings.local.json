@@ -14,7 +14,10 @@
       "Bash(/c/Users/chris/AppData/Roaming/PrismLauncher/java/java-runtime-delta/bin/javap -c net/minecraft/client/renderer/RenderPipelines.class)",
       "Bash(/c/Users/chris/AppData/Roaming/PrismLauncher/java/java-runtime-delta/bin/javap -p net/minecraft/client/renderer/RenderPipelines.class)",
       "WebFetch(domain:github.com)",
-      "PowerShell(Add-Type -AssemblyName System.Drawing; $bmp = [System.Drawing.Bitmap]::FromFile\\(\"C:\\\\Users\\\\chris\\\\Downloads\\\\268.webp\"\\); $bmp.Save\\(\"C:\\\\users\\\\chris\\\\glow\\\\src\\\\main\\\\resources\\\\assets\\\\glowmod\\\\icon.png\", [System.Drawing.Imaging.ImageFormat]::Png\\); $bmp.Dispose\\(\\); Write-Host \"Done - size: $\\($bmp.Width\\)x$\\($bmp.Height\\)\")"
+      "PowerShell(Add-Type -AssemblyName System.Drawing; $bmp = [System.Drawing.Bitmap]::FromFile\\(\"C:\\\\Users\\\\chris\\\\Downloads\\\\268.webp\"\\); $bmp.Save\\(\"C:\\\\users\\\\chris\\\\glow\\\\src\\\\main\\\\resources\\\\assets\\\\glowmod\\\\icon.png\", [System.Drawing.Imaging.ImageFormat]::Png\\); $bmp.Dispose\\(\\); Write-Host \"Done - size: $\\($bmp.Width\\)x$\\($bmp.Height\\)\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\" -Directory | Where-Object { $_.Name -match \"java|jdk|jre|adoptium|temurin|corretto|zulu|graal\" -or $_.Name -match \"Java\" } | Select-Object FullName)",
+      "PowerShell($env:JAVA_HOME = \"C:\\\\graalvm-21\"; $env:PATH = \"$env:JAVA_HOME\\\\bin;$env:PATH\"; .\\\\gradlew.bat build 2>&1)",
+      "Bash(git push *)"
     ]
   }
 }
