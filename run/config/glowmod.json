@@ -1,0 +1,20 @@
+{
+  "playerGlowEnabled": true,
+  "playerGlowColor": 16777215,
+  "mobGlowEnabled": true,
+  "mobGlowColor": 16729156,
+  "blockOutlineEnabled": true,
+  "defaultOutlineColor": 65280,
+  "outlineLineWidth": 2.5,
+  "outlineOpacity": 1.0,
+  "glowRange": 64.0,
+  "maxGlowEntities": 16,
+  "chunkScanRate": 3,
+  "chunkRefreshInterval": 200,
+  "guiOpacity": 1.0,
+  "guiAccentColor": 6514417,
+  "blockWhitelist": [],
+  "mobGlowWhitelist": [],
+  "disabledBlocks": [],
+  "disabledMobs": []
+}

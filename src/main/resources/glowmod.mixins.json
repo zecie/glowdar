@@ -3,7 +3,7 @@
   "package": "com.glowmod.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "EntityGlowMixin"
+    "WindowMixin"
   ],
   "injectors": {
     "defaultRequire": 1

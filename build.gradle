@@ -10,14 +10,32 @@ base {
 }
 
 repositories {
+    exclusiveContent {
+        forRepository {
+            maven { url = file("local-libs") }
+        }
+        filter {
+            includeModule 'org.lwjgl', 'lwjgl-freetype'
+        }
+    }
     mavenCentral()
+    maven { url = 'https://libraries.minecraft.net/' }
+    maven { url = 'https://maven.fabricmc.net/' }
 }
+
+def imguiVersion = "1.89.0"
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings loom.layered { officialMojangMappings() }
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    implementation include("io.github.spair:imgui-java-binding:${imguiVersion}")
+    implementation include("io.github.spair:imgui-java-lwjgl3:${imguiVersion}")
+    runtimeOnly include("io.github.spair:imgui-java-natives-windows:${imguiVersion}")
+    runtimeOnly include("io.github.spair:imgui-java-natives-linux:${imguiVersion}")
+    runtimeOnly include("io.github.spair:imgui-java-natives-macos:${imguiVersion}")
 }
 
 java {
