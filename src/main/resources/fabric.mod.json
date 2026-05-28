@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "id": "glowmod",
+  "id": "glowdar",
   "version": "${version}",
-  "name": "GlowMod",
+  "name": "Glowdar",
   "description": "A client side mod designed to locate blocks in your render distance with configurable performance optimizations and a sleek GUI",
   "authors": [
     "chris"
   ],
   "contact": {},
   "license": "MIT",
-  "icon": "assets/glowmod/icon.png",
+  "icon": "assets/glowdar/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": [
@@ -17,11 +17,12 @@
     ]
   },
   "mixins": [
-    "glowmod.mixins.json"
+    "glowdar.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.18.0",
     "fabric-api": "*",
-    "minecraft": ">=1.21.11"
+    "minecraft": ">=1.21.11",
+    "mcef": "*"
   }
 }

@@ -1,0 +1,14 @@
+{
+  "key.glowdar.open_gui": "Open Glowdar Settings",
+  "key.categories.glowdar": "Glowdar",
+  "glowdar.screen.title": "Glowdar Settings",
+  "glowdar.screen.search": "Search blocks...",
+  "glowdar.screen.whitelist": "Block Whitelist",
+  "glowdar.screen.player_glow": "Player Glow: ",
+  "glowdar.screen.block_outline": "Block Outlines: ",
+  "glowdar.screen.on": "ON",
+  "glowdar.screen.off": "OFF",
+  "glowdar.screen.done": "Done",
+  "glowdar.screen.color": "Color (hex):",
+  "glowdar.screen.limit_warning": "Limit reached (5000 blocks max)"
+}

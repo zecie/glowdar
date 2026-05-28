@@ -21,9 +21,8 @@ repositories {
     mavenCentral()
     maven { url = 'https://libraries.minecraft.net/' }
     maven { url = 'https://maven.fabricmc.net/' }
+    maven { url = 'https://keksuccino.github.io/maven/' }
 }
-
-def imguiVersion = "1.89.0"
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -31,11 +30,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    implementation include("io.github.spair:imgui-java-binding:${imguiVersion}")
-    implementation include("io.github.spair:imgui-java-lwjgl3:${imguiVersion}")
-    runtimeOnly include("io.github.spair:imgui-java-natives-windows:${imguiVersion}")
-    runtimeOnly include("io.github.spair:imgui-java-natives-linux:${imguiVersion}")
-    runtimeOnly include("io.github.spair:imgui-java-natives-macos:${imguiVersion}")
+    modImplementation "de.keksuccino:mcef-fabric:2.2.0-1.21.11"
 }
 
 java {

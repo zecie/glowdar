@@ -32,11 +32,13 @@ public class GlowConfig {
     public static float outlineOpacity    = 1.0f;
     public static float glowRange         = 64.0f;
     public static int   maxGlowEntities   = 16;
-    public static int   chunkScanRate        = 3;
+    public static int   chunkScanRate        = 20;
     public static int   chunkRefreshInterval = 200;
 
+    public static String espAnimMode    = "SOLID";
+
     public static float guiOpacity     = 1.0f;
-    public static int   guiAccentColor = 0x6366F1;
+    public static int   guiAccentColor = 0xFF5500;
 
     public static final LinkedHashMap<String, Integer> blockWhitelist = new LinkedHashMap<>();
     public static final Set<String> mobGlowWhitelist = new LinkedHashSet<>();
@@ -45,7 +47,7 @@ public class GlowConfig {
     public static final Set<String> disabledMobs   = new LinkedHashSet<>();
 
     private static final Path CONFIG_FILE = FabricLoader.getInstance()
-            .getConfigDir().resolve("glowmod.json");
+            .getConfigDir().resolve("glowdar.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     public static void load() {
@@ -65,6 +67,7 @@ public class GlowConfig {
             if (obj.has("maxGlowEntities"))   maxGlowEntities   = obj.get("maxGlowEntities").getAsInt();
             if (obj.has("chunkScanRate"))        chunkScanRate        = obj.get("chunkScanRate").getAsInt();
             if (obj.has("chunkRefreshInterval")) chunkRefreshInterval = obj.get("chunkRefreshInterval").getAsInt();
+            if (obj.has("espAnimMode"))    espAnimMode    = obj.get("espAnimMode").getAsString();
             if (obj.has("guiOpacity"))        guiOpacity        = obj.get("guiOpacity").getAsFloat();
             if (obj.has("guiAccentColor"))    guiAccentColor    = obj.get("guiAccentColor").getAsInt();
             if (obj.has("blockWhitelist")) {
@@ -114,6 +117,7 @@ public class GlowConfig {
         obj.addProperty("maxGlowEntities",   maxGlowEntities);
         obj.addProperty("chunkScanRate",        chunkScanRate);
         obj.addProperty("chunkRefreshInterval", chunkRefreshInterval);
+        obj.addProperty("espAnimMode",        espAnimMode);
         obj.addProperty("guiOpacity",        guiOpacity);
         obj.addProperty("guiAccentColor",    guiAccentColor);
         JsonArray arr = new JsonArray();
